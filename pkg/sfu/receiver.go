@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gammazero/workerpool"
+	"github.com/icn-team/webrtc/v3"
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/ion-sfu/pkg/stats"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
-	"github.com/icn-team/webrtc/v3"
 )
 
 // Receiver defines a interface for a track receivers
@@ -349,6 +349,10 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 			return
 		}
 
+		// Encrypt packet only once using the first downtrack
+		dts := w.downTracks[layer].Load().([]*DownTrack)
+		dts[0].EncryptRTP(pkt)
+
 		if w.isSimulcast {
 			if w.pending[layer].get() {
 				if pkt.KeyFrame {
@@ -368,7 +372,7 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 			}
 		}
 
-		for _, dt := range w.downTracks[layer].Load().([]*DownTrack) {
+		for _, dt := range dts {
 			if err = dt.WriteRTP(pkt, layer); err != nil {
 				if err == io.EOF || err == io.ErrClosedPipe {
 					w.Lock()

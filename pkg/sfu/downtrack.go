@@ -7,10 +7,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/icn-team/webrtc/v3"
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/rtcp"
 	"github.com/pion/transport/packetio"
-	"github.com/icn-team/webrtc/v3"
 )
 
 // DownTrackType determines the type of track
@@ -166,6 +166,22 @@ func (d *DownTrack) WriteRTP(p *buffer.ExtPacket, layer int) error {
 		return d.writeSimulcastRTP(p, layer)
 	}
 	return nil
+}
+
+// EncryptRTP encrypts a RTP Packet
+func (d *DownTrack) EncryptRTP(p *buffer.ExtPacket) error {
+	if !d.enabled.get() || !d.bound.get() {
+		return nil
+	}
+
+	buf := make([]byte, len(p.Packet.Payload))
+
+	ciphertext, err := d.writeStream.EncryptRTP(buf, &p.Packet.Header, p.Packet.Payload)
+	if err != nil {
+		return err
+	}
+
+	return p.Packet.Unmarshal(ciphertext)
 }
 
 func (d *DownTrack) Enabled() bool {
