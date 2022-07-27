@@ -12,7 +12,7 @@ import (
 	"github.com/pion/ion-sfu/pkg/stats"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 // Receiver defines a interface for a track receivers

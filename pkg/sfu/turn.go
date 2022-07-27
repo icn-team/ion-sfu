@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pion/dtls/v2"
+	"github.com/icn-team/dtls/v2"
 	"github.com/pion/logging"
 	"github.com/pion/turn/v2"
 )

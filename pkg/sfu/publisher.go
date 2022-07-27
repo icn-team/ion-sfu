@@ -12,7 +12,7 @@ import (
 
 	"github.com/pion/ion-sfu/pkg/relay"
 	"github.com/pion/rtcp"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 type Publisher struct {

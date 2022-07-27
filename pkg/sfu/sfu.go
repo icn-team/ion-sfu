@@ -13,7 +13,7 @@ import (
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/ion-sfu/pkg/stats"
 	"github.com/pion/turn/v2"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 // Logger is an implementation of logr.Logger. If is not provided - will be turned off.
