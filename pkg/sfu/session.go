@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pion/ion-sfu/pkg/relay"
+	"github.com/icn-team/ion-sfu/pkg/relay"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 // Session represents a set of peers. Transports inside a SessionLocal

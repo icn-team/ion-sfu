@@ -10,10 +10,10 @@ import (
 
 	"github.com/gammazero/deque"
 	"github.com/go-logr/logr"
+	"github.com/icn-team/webrtc/v3"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
 	"github.com/pion/sdp/v3"
-	"github.com/pion/webrtc/v3"
 )
 
 const (
@@ -47,7 +47,7 @@ type Buffer struct {
 	videoPool  *sync.Pool
 	audioPool  *sync.Pool
 	codecType  webrtc.RTPCodecType
-	extPackets deque.Deque
+	extPackets deque.Deque[*ExtPacket]
 	pPackets   []pendingPackets
 	closeOnce  sync.Once
 	mediaSSRC  uint32
@@ -238,7 +238,7 @@ func (b *Buffer) ReadExtended() (*ExtPacket, error) {
 		}
 		b.Lock()
 		if b.extPackets.Len() > 0 {
-			extPkt := b.extPackets.PopFront().(*ExtPacket)
+			extPkt := b.extPackets.PopFront()
 			b.Unlock()
 			return extPkt, nil
 		}

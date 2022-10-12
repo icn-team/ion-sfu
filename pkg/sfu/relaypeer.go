@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pion/ion-sfu/pkg/buffer"
-	"github.com/pion/ion-sfu/pkg/relay"
+	"github.com/icn-team/ion-sfu/pkg/buffer"
+	"github.com/icn-team/ion-sfu/pkg/relay"
 	"github.com/pion/rtcp"
 	"github.com/pion/transport/packetio"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 type RelayPeer struct {

@@ -9,13 +9,10 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/pion/ion-sfu/cmd/signal/grpc/server"
-	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
-	"github.com/rs/zerolog"
-
-	log "github.com/pion/ion-sfu/pkg/logger"
-	"github.com/pion/ion-sfu/pkg/sfu"
+	log "github.com/icn-team/ion-sfu/pkg/logger"
+	"github.com/icn-team/ion-sfu/pkg/sfu"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
 

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/icn-team/webrtc/v3"
 	"github.com/pion/rtcp"
-	"github.com/pion/webrtc/v3"
 )
 
 const (
@@ -28,12 +28,12 @@ var (
 )
 
 type signal struct {
-	Encodings        *webrtc.RTPCodingParameters `json:"encodings,omitempty"`
-	ICECandidates    []webrtc.ICECandidate       `json:"iceCandidates,omitempty"`
-	ICEParameters    webrtc.ICEParameters        `json:"iceParameters,omitempty"`
-	DTLSParameters   webrtc.DTLSParameters       `json:"dtlsParameters,omitempty"`
-	SCTPCapabilities *webrtc.SCTPCapabilities    `json:"sctpCapabilities,omitempty"`
-	TrackMeta        *TrackMeta                  `json:"trackInfo,omitempty"`
+	Encodings          *webrtc.RTPCodingParameters `json:"encodings,omitempty"`
+	ICECandidates      []webrtc.ICECandidate       `json:"iceCandidates,omitempty"`
+	ICEParameters      webrtc.ICEParameters        `json:"iceParameters,omitempty"`
+	SecurityParameters webrtc.SecurityParameters   `json:"dtlsParameters,omitempty"`
+	SCTPCapabilities   *webrtc.SCTPCapabilities    `json:"sctpCapabilities,omitempty"`
+	TrackMeta          *TrackMeta                  `json:"trackInfo,omitempty"`
 }
 
 type request struct {
@@ -195,7 +195,7 @@ func (p *Peer) Offer(signalFn func(meta PeerMeta, signal []byte) ([]byte, error)
 	if ls.ICEParameters, err = p.gatherer.GetLocalParameters(); err != nil {
 		return err
 	}
-	if ls.DTLSParameters, err = p.dtls.GetLocalParameters(); err != nil {
+	if ls.SecurityParameters, err = p.dtls.GetLocalParameters(); err != nil {
 		return err
 	}
 
@@ -266,7 +266,7 @@ func (p *Peer) Answer(request []byte) ([]byte, error) {
 	if ls.ICEParameters, err = p.gatherer.GetLocalParameters(); err != nil {
 		return nil, err
 	}
-	if ls.DTLSParameters, err = p.dtls.GetLocalParameters(); err != nil {
+	if ls.SecurityParameters, err = p.dtls.GetLocalParameters(); err != nil {
 		return nil, err
 	}
 
@@ -374,7 +374,7 @@ func (p *Peer) start(s *signal) error {
 		return err
 	}
 
-	if err := p.dtls.Start(s.DTLSParameters); err != nil {
+	if err := p.dtls.Start(s.SecurityParameters); err != nil {
 		return err
 	}
 

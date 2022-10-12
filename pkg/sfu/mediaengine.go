@@ -2,7 +2,7 @@ package sfu
 
 import (
 	"github.com/pion/sdp/v3"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/webrtc/v3"
 )
 
 const frameMarking = "urn:ietf:params:rtp-hdrext:framemarking"

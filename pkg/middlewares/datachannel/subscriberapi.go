@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pion/ion-sfu/pkg/sfu"
-	"github.com/pion/webrtc/v3"
+	"github.com/icn-team/ion-sfu/pkg/sfu"
+	"github.com/icn-team/webrtc/v3"
 )
 
 const (

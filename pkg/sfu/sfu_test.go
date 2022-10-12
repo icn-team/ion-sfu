@@ -7,9 +7,9 @@ import (
 
 	"github.com/lucsky/cuid"
 
-	"github.com/pion/ion-sfu/pkg/logger"
-	"github.com/pion/webrtc/v3"
-	med "github.com/pion/webrtc/v3/pkg/media"
+	"github.com/icn-team/ion-sfu/pkg/logger"
+	"github.com/icn-team/webrtc/v3"
+	med "github.com/icn-team/webrtc/v3/pkg/media"
 	"github.com/stretchr/testify/assert"
 )
 
