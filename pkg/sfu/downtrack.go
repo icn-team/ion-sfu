@@ -154,18 +154,27 @@ func (d *DownTrack) SetTransceiver(transceiver *webrtc.RTPTransceiver) {
 	d.transceiver = transceiver
 }
 
-// WriteRTP writes a RTP Packet to the DownTrack
-func (d *DownTrack) WriteRTP(p *buffer.ExtPacket, layer int) error {
+func (d *DownTrack) writeRTP(p *buffer.ExtPacket, layer int, secure bool) error {
 	if !d.enabled.get() || !d.bound.get() {
 		return nil
 	}
 	switch d.trackType {
 	case SimpleDownTrack:
-		return d.writeSimpleRTP(p)
+		return d.writeSimpleRTP(p, secure)
 	case SimulcastDownTrack:
-		return d.writeSimulcastRTP(p, layer)
+		return d.writeSimulcastRTP(p, layer, secure)
 	}
 	return nil
+}
+
+// WriteRTP encrypts and writes a RTP Packet to the DownTrack
+func (d *DownTrack) WriteRTP(p *buffer.ExtPacket, layer int) error {
+	return d.writeRTP(p, layer, true)
+}
+
+// WriteInsecureRTP writes a RTP Packet to the DownTrack
+func (d *DownTrack) WriteInsecureRTP(p *buffer.ExtPacket, layer int) error {
+	return d.writeRTP(p, layer, false)
 }
 
 func (d *DownTrack) Enabled() bool {
@@ -343,7 +352,7 @@ func (d *DownTrack) UpdateStats(packetLen uint32) {
 	atomic.AddUint32(&d.packetCount, 1)
 }
 
-func (d *DownTrack) writeSimpleRTP(extPkt *buffer.ExtPacket) error {
+func (d *DownTrack) writeSimpleRTP(extPkt *buffer.ExtPacket, secure bool) error {
 	if d.reSync.get() {
 		if d.Kind() == webrtc.RTPCodecTypeVideo {
 			if !extPkt.KeyFrame {
@@ -379,11 +388,16 @@ func (d *DownTrack) writeSimpleRTP(extPkt *buffer.ExtPacket) error {
 	hdr.SequenceNumber = newSN
 	hdr.SSRC = d.ssrc
 
+	if !secure {
+		_, err := d.writeStream.WriteInsecureRTP(&hdr, extPkt.Packet.Payload)
+		return err
+	}
+
 	_, err := d.writeStream.WriteRTP(&hdr, extPkt.Packet.Payload)
 	return err
 }
 
-func (d *DownTrack) writeSimulcastRTP(extPkt *buffer.ExtPacket, layer int) error {
+func (d *DownTrack) writeSimulcastRTP(extPkt *buffer.ExtPacket, layer int, secure bool) error {
 	// Check if packet SSRC is different from before
 	// if true, the video source changed
 	reSync := d.reSync.get()
@@ -480,6 +494,11 @@ func (d *DownTrack) writeSimulcastRTP(extPkt *buffer.ExtPacket, layer int) error
 	hdr.Timestamp = newTS
 	hdr.SSRC = d.ssrc
 	hdr.PayloadType = d.payloadType
+
+	if !secure {
+		_, err := d.writeStream.WriteInsecureRTP(&hdr, payload)
+		return err
+	}
 
 	_, err := d.writeStream.WriteRTP(&hdr, payload)
 	return err

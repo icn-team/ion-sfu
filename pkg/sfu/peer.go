@@ -44,6 +44,8 @@ type JoinConfig struct {
 	// to customize the subscrbe stream combination as needed.
 	// this parameter depends on NoSubscribe=false.
 	NoAutoSubscribe bool
+
+	SecurityTransportType string
 }
 
 // SessionProvider provides the SessionLocal to the sfu.Peer
@@ -103,6 +105,19 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 
 	s, cfg := p.provider.GetSession(sid)
 	p.session = s
+
+	switch conf.SecurityTransportType {
+	case "sdes", "mls":
+		cfg.Configuration.SecurityTransportType = webrtc.SecurityTransportTypeShared
+		cfg.Setting.DisableSRTPDecrypt(true)
+		cfg.Setting.DisableSRTCPDecrypt(true)
+		cfg.Router.WriteInsecure = true
+	default:
+		cfg.Configuration.SecurityTransportType = webrtc.SecurityTransportTypeDTLS
+		cfg.Setting.DisableSRTPDecrypt(false)
+		cfg.Setting.DisableSRTCPDecrypt(false)
+		cfg.Router.WriteInsecure = false
+	}
 
 	if !conf.NoSubscribe {
 		p.subscriber, err = NewSubscriber(uid, cfg)

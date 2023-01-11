@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/bep/debounce"
-	"github.com/pion/rtcp"
 	"github.com/icn-team/webrtc/v3"
+	"github.com/pion/rtcp"
 )
 
 const APIChannelLabel = "ion-sfu"
@@ -27,7 +27,8 @@ type Subscriber struct {
 	negotiate func()
 	closeOnce sync.Once
 
-	noAutoSubscribe bool
+	noAutoSubscribe   bool
+	writeInsecureRTCP bool
 }
 
 // NewSubscriber creates a new Subscriber
@@ -46,12 +47,13 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 	}
 
 	s := &Subscriber{
-		id:              id,
-		me:              me,
-		pc:              pc,
-		tracks:          make(map[string][]*DownTrack),
-		channels:        make(map[string]*webrtc.DataChannel),
-		noAutoSubscribe: false,
+		id:                id,
+		me:                me,
+		pc:                pc,
+		tracks:            make(map[string][]*DownTrack),
+		channels:          make(map[string]*webrtc.DataChannel),
+		noAutoSubscribe:   false,
+		writeInsecureRTCP: cfg.Router.WriteInsecure,
 	}
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
@@ -277,7 +279,7 @@ func (s *Subscriber) downTracksReports() {
 			nsd := sd[j*15 : i]
 			r = append(r, &rtcp.SourceDescription{Chunks: nsd})
 			j++
-			if err := s.pc.WriteRTCP(r); err != nil {
+			if err := s.WriteRTCP(r); err != nil {
 				if err == io.EOF || err == io.ErrClosedPipe {
 					return
 				}
@@ -309,7 +311,7 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 		r := r
 		i := 0
 		for {
-			if err := s.pc.WriteRTCP(r); err != nil {
+			if err := s.WriteRTCP(r); err != nil {
 				Logger.Error(err, "Sending track binding reports err")
 			}
 			if i > 5 {
@@ -319,4 +321,12 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 			time.Sleep(20 * time.Millisecond)
 		}
 	}()
+}
+
+func (s *Subscriber) WriteRTCP(pkts []rtcp.Packet) error {
+	if s.writeInsecureRTCP {
+		return s.pc.WriteInsecureRTCP(pkts)
+	}
+
+	return s.pc.WriteRTCP(pkts)
 }

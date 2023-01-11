@@ -10,9 +10,9 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/icn-team/ion-sfu/pkg/buffer"
 	"github.com/icn-team/ion-sfu/pkg/stats"
+	"github.com/icn-team/webrtc/v3"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
-	"github.com/icn-team/webrtc/v3"
 )
 
 // Receiver defines a interface for a track receivers
@@ -23,7 +23,7 @@ type Receiver interface {
 	Kind() webrtc.RTPCodecType
 	SSRC(layer int) uint32
 	SetTrackMeta(trackID, streamID string)
-	AddUpTrack(track *webrtc.TrackRemote, buffer *buffer.Buffer, bestQualityFirst bool)
+	AddUpTrack(track *webrtc.TrackRemote, buffer *buffer.Buffer, bestQualityFirst bool, writeInsecure bool)
 	AddDownTrack(track *DownTrack, bestQualityFirst bool)
 	SwitchDownTrack(track *DownTrack, layer int) error
 	GetBitrate() [3]uint64
@@ -106,7 +106,7 @@ func (w *WebRTCReceiver) Kind() webrtc.RTPCodecType {
 	return w.kind
 }
 
-func (w *WebRTCReceiver) AddUpTrack(track *webrtc.TrackRemote, buff *buffer.Buffer, bestQualityFirst bool) {
+func (w *WebRTCReceiver) AddUpTrack(track *webrtc.TrackRemote, buff *buffer.Buffer, bestQualityFirst bool, writeInsecure bool) {
 	if w.closed.get() {
 		return
 	}
@@ -160,7 +160,7 @@ func (w *WebRTCReceiver) AddUpTrack(track *webrtc.TrackRemote, buff *buffer.Buff
 			subLowestQuality(layer)
 		}
 	}
-	go w.writeRTP(layer)
+	go w.writeRTP(layer, writeInsecure)
 }
 
 func (w *WebRTCReceiver) AddDownTrack(track *DownTrack, bestQualityFirst bool) {
@@ -331,7 +331,7 @@ func (w *WebRTCReceiver) RetransmitPackets(track *DownTrack, packets []packetMet
 	return nil
 }
 
-func (w *WebRTCReceiver) writeRTP(layer int) {
+func (w *WebRTCReceiver) writeRTP(layer int, writeInsecure bool) {
 	defer func() {
 		w.closeOnce.Do(func() {
 			w.closed.set(true)
@@ -369,7 +369,13 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 		}
 
 		for _, dt := range w.downTracks[layer].Load().([]*DownTrack) {
-			if err = dt.WriteRTP(pkt, layer); err != nil {
+			if writeInsecure {
+				err = dt.WriteInsecureRTP(pkt, layer)
+			} else {
+				err = dt.WriteRTP(pkt, layer)
+			}
+
+			if err != nil {
 				if err == io.EOF || err == io.ErrClosedPipe {
 					w.Lock()
 					w.deleteDownTrack(layer, dt.id)

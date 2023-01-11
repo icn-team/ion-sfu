@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/bep/debounce"
-	log "github.com/pion/ion-log"
 	"github.com/icn-team/ion-sfu/pkg/sfu"
-	rtc "github.com/pion/ion/proto/rtc"
 	"github.com/icn-team/webrtc/v3"
+	log "github.com/pion/ion-log"
+	rtc "github.com/pion/ion/proto/rtc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -185,10 +185,16 @@ func (s *SFUServer) Signal(sig rtc.RTC_SignalServer) error {
 				noautosub = val == "true"
 			}
 
+			securityTransportType := "dtls"
+			if val, found := payload.Join.Config["SecurityTransportType"]; found {
+				securityTransportType = val
+			}
+
 			cfg := sfu.JoinConfig{
-				NoPublish:       nopub,
-				NoSubscribe:     nosub,
-				NoAutoSubscribe: noautosub,
+				NoPublish:             nopub,
+				NoSubscribe:           nosub,
+				NoAutoSubscribe:       noautosub,
+				SecurityTransportType: securityTransportType,
 			}
 
 			err = peer.Join(sid, uid, cfg)

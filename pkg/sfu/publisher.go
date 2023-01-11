@@ -11,8 +11,8 @@ import (
 	"github.com/pion/transport/packetio"
 
 	"github.com/icn-team/ion-sfu/pkg/relay"
-	"github.com/pion/rtcp"
 	"github.com/icn-team/webrtc/v3"
+	"github.com/pion/rtcp"
 )
 
 type Publisher struct {
@@ -32,6 +32,8 @@ type Publisher struct {
 	onPublisherTrack                  atomic.Value // func(PublisherTrack)
 
 	closeOnce sync.Once
+
+	writeInsecureRTCP bool
 }
 
 type relayPeer struct {
@@ -67,11 +69,12 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 	}
 
 	p := &Publisher{
-		id:      id,
-		pc:      pc,
-		cfg:     cfg,
-		router:  newRouter(id, session, cfg),
-		session: session,
+		id:                id,
+		pc:                pc,
+		cfg:               cfg,
+		router:            newRouter(id, session, cfg),
+		session:           session,
+		writeInsecureRTCP: cfg.Router.WriteInsecure,
 	}
 
 	pc.OnTrack(func(track *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
@@ -128,7 +131,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 		}
 	})
 
-	p.router.SetRTCPWriter(p.pc.WriteRTCP)
+	p.router.SetRTCPWriter(p.WriteRTCP)
 
 	return p, nil
 }
@@ -371,7 +374,7 @@ func (p *Publisher) createRelayTrack(track *webrtc.TrackRemote, receiver Receive
 		ClockRate:    codec.ClockRate,
 		Channels:     codec.Channels,
 		SDPFmtpLine:  codec.SDPFmtpLine,
-		RTCPFeedback: []webrtc.RTCPFeedback{{"nack", ""}, {"nack", "pli"}},
+		RTCPFeedback: []webrtc.RTCPFeedback{{Type: "nack", Parameter: ""}, {Type: "nack", Parameter: "pli"}},
 	}, receiver, p.cfg.BufferFactory, p.id, p.cfg.Router.MaxPacketTrack)
 	if err != nil {
 		Logger.V(1).Error(err, "Create Relay downtrack err", "peer_id", p.id)
@@ -403,7 +406,7 @@ func (p *Publisher) createRelayTrack(track *webrtc.TrackRemote, receiver Receive
 		}
 
 		if len(rpkts) > 0 {
-			if err := p.pc.WriteRTCP(rpkts); err != nil {
+			if err := p.WriteRTCP(rpkts); err != nil {
 				Logger.V(1).Error(err, "Sending rtcp relay reports", "peer_id", p.id)
 			}
 		}
@@ -447,4 +450,12 @@ func (p *Publisher) relayReports(rp *relay.Peer) {
 			Logger.Error(err, "Sending downtrack reports err")
 		}
 	}
+}
+
+func (p *Publisher) WriteRTCP(pkts []rtcp.Packet) error {
+	if p.writeInsecureRTCP {
+		return p.pc.WriteInsecureRTCP(pkts)
+	}
+
+	return p.pc.WriteRTCP(pkts)
 }

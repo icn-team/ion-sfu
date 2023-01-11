@@ -7,8 +7,8 @@ import (
 	"github.com/icn-team/ion-sfu/pkg/buffer"
 	"github.com/icn-team/ion-sfu/pkg/stats"
 	"github.com/icn-team/ion-sfu/pkg/twcc"
-	"github.com/pion/rtcp"
 	"github.com/icn-team/webrtc/v3"
+	"github.com/pion/rtcp"
 )
 
 // Router defines a track rtp/rtcp Router
@@ -33,6 +33,7 @@ type RouterConfig struct {
 	AudioLevelThreshold uint8           `mapstructure:"audiolevelthreshold"`
 	AudioLevelFilter    int             `mapstructure:"audiolevelfilter"`
 	Simulcast           SimulcastConfig `mapstructure:"simulcast"`
+	WriteInsecure       bool            `mapstructure:"writeinsecure"`
 }
 
 type router struct {
@@ -186,7 +187,7 @@ func (r *router) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.TrackRe
 		}
 	}
 
-	recv.AddUpTrack(track, buff, r.config.Simulcast.BestQualityFirst)
+	recv.AddUpTrack(track, buff, r.config.Simulcast.BestQualityFirst, r.config.WriteInsecure)
 
 	buff.Bind(receiver.GetParameters(), buffer.Options{
 		MaxBitRate: r.config.MaxBandwidth,
